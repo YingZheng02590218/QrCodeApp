@@ -295,6 +295,7 @@
 				DEVELOPMENT_TEAM = T526NZN54U;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = QrCodeApp/Info.plist;
+				INFOPLIST_KEY_NSCameraUsageDescription = "QRコードを読み取るためにカメラを使用します";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;
@@ -323,6 +324,7 @@
 				DEVELOPMENT_TEAM = T526NZN54U;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = QrCodeApp/Info.plist;
+				INFOPLIST_KEY_NSCameraUsageDescription = "QRコードを読み取るためにカメラを使用します";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;
