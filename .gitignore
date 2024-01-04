@@ -1,0 +1,11 @@
+UserInterfaceState.xcuserstate
+#CocoaPod
+Pods/*
+Breakpoints_v2.xcbkptlist
+xcshareddata
+xcworkspace
+xcworkspacedata
+Pods
+Podfile
+carthage
+UserInterfaceState
