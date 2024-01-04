@@ -41,6 +41,7 @@ class ViewController: UIViewController {
     private var makeSound: Bool = false
     private var makeHapticFeedback: Bool = false
     private var showBoundingBox: Bool = false
+    // 一度読み込んだQRコードをSetに保存しておく
     private var scannedQRs = Set<String>()
     
     // AVCaptureSession　初期化
@@ -92,8 +93,8 @@ class ViewController: UIViewController {
                     self.metadataOutput.rectOfInterest = metadataOutputRectOfInterest
                 }
             }
-            // 最後、startRunning()でセッションを開始すればQRコードを読み取ることができるようになりました！
-            self.session.startRunning()
+            // 読み取りを開始するメソッド
+            self.startReading()
         }
     }
     
@@ -117,15 +118,15 @@ class ViewController: UIViewController {
     }
     
     // MARK: configureSession
-    // AVCapureSession初期化開始＆Device取得
+    // セッションの設定 AVCapureSession初期化開始＆Device取得
     private func configureSession() {
         // これはもろもろのセッション初期化処理をバッチで変更するためのものです。
         session.beginConfiguration()
         // デバイスを指定
         let defaultVideoDevice = AVCaptureDevice.default(
             .builtInWideAngleCamera,
-                                                         for: .video, // カメラの用途
-                                                         position: .back // ポジション
+            for: .video, // カメラの用途
+            position: .back // ポジション
         )
         guard let videoDevice = defaultVideoDevice else {
             session.commitConfiguration()
@@ -168,8 +169,21 @@ class ViewController: UIViewController {
         session.commitConfiguration()
     }
     
+    // 読み取りを開始する
+    func startReading() {
+        if session.isRunning == false {
+            // 最後、startRunning()でセッションを開始すればQRコードを読み取ることができるようになりました！
+            self.session.startRunning()
+        }
+    }
+    
+    // セッションの読み取りを停止
+    func stopScanning() {
+        session.stopRunning()
+    }
+    
     // MARK: QRコード読み取りよくある機能
-
+    
     // MARK: 追跡しているQRコードの枠
     private func setupBoundingBox() {
         boundingBox.frame = preview.layer.bounds
@@ -271,7 +285,7 @@ class ViewController: UIViewController {
     }
     
     // MARK: - アクション
-            
+    
     @IBAction func switchTorch(_ sender: UISwitch) {
         if sender.isOn {
             switchTorch(.on)
@@ -317,6 +331,36 @@ class ViewController: UIViewController {
         setZoomFactor(CGFloat(sender.value))
     }
     
+    // 読み取ったデータの表示
+    func showQRData(data: String) {
+        DispatchQueue.main.async {
+            // URL以外の場合、ダイアログを表示させる
+            let alert = UIAlertController(title: "QRコードの内容", message: data, preferredStyle: .alert)
+            alert.addAction(UIAlertAction(title: "OK", style: .default, handler: { _ in 
+                // 読み取りを開始するメソッド
+                self.startReading()
+            }))
+            self.present(alert, animated: true, completion: nil)
+        }
+    }
+    
+    // ブラウザの表示
+    func showBrowser(data: String) {
+        DispatchQueue.main.async {
+            guard let url = URL(string: data) else {
+                // 読み取ったデータの表示
+                self.showQRData(data: data)
+                return
+            }
+            // URLの場合、外部ブラウザを起動させる
+            UIApplication.shared.open(url, options: [:])
+            
+            UIControl().sendAction(#selector(URLSessionTask.suspend), to: UIApplication.shared, for: nil)
+            Timer.scheduledTimer(withTimeInterval: 0.2, repeats: false) { _ in
+                exit(0)
+            }
+        }
+    }
 }
 
 // MARK: AVCaptureMetadataOutputObjectsDelegate
@@ -333,6 +377,16 @@ extension ViewController: AVCaptureMetadataOutputObjectsDelegate {
                   machineReadableCode.type == .qr,
                   let stringValue = machineReadableCode.stringValue
             else {
+                // エラーハンドリング
+                let alert = UIAlertController(title: "エラー", message: "読み取り中にエラーが発生しました", preferredStyle: .alert)
+                self.present(alert, animated: true) { () -> Void in
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        self.dismiss(animated: true, completion: { [self] () -> Void in
+                            // エラーメッセージを表示
+                            print("読み取り中にエラーが発生しました。")
+                        })
+                    }
+                }
                 return
             }
             
@@ -354,12 +408,20 @@ extension ViewController: AVCaptureMetadataOutputObjectsDelegate {
                     self.playSuccessSound()
                     self.HapticSuccessNotification()
                     print("The content of QR code: \(stringValue)")
+                    // 読み取ったデータの表示
+                    showQRData(data: stringValue)
+                    // セッションの読み取りを停止
+                    stopScanning()
                 }
             } else {
                 // 読み取り成功🎉
                 self.playSuccessSound()
                 self.HapticSuccessNotification()
                 print("The content of QR code: \(stringValue)")
+                // ブラウザの表示
+                showBrowser(data: stringValue)
+                // セッションの読み取りを停止
+                stopScanning()
             }
         }
     }
